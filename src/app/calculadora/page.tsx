@@ -196,7 +196,7 @@ export default function CalculadoraPage() {
                 <p className="text-sm text-gray-600">
                   <strong>Vehículo:</strong> Hyundai H1 2013 Diésel<br/>
                   <strong>Consumo:</strong> {CONSUMO_KM_POR_LITROS} kilómetro  por litros<br/>
-                  <strong>Capacidad:</strong> 13 pasajeros
+                  <strong>Capacidad:</strong> 11 pasajeros
                 </p>
               </div>
             </div>

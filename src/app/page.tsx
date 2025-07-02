@@ -58,7 +58,7 @@ export default function HomePage() {
             Explora Nicaragua
           </h2>
           <p className="text-xl md:text-2xl text-blue-100 mb-8">
-            Transporte seguro y cómodo para grupos de hasta 13 pasajeros
+            Transporte seguro y cómodo para grupos de hasta 11 pasajeros
           </p>
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-white">
             <div className="grid md:grid-cols-3 gap-6">
@@ -71,7 +71,7 @@ export default function HomePage() {
               </div>
               <div className="text-center">
                 <div className="text-3xl mb-2">👥</div>
-                <h3 className="font-semibold mb-2">13 Pasajeros</h3>
+                <h3 className="font-semibold mb-2">11 Pasajeros</h3>
                 <p className="text-sm text-blue-100">
                   Capacidad para grupos grandes
                 </p>
