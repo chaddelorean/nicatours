@@ -35,6 +35,8 @@ export default function TripsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function TripsPage() {
     if (isAuthenticated) {
       fetchTrips(currentPage)
     }
-  }, [isAuthenticated, currentPage])
+  }, [isAuthenticated, currentPage, startDate, endDate])
 
   const fetchTrips = async (page: number) => {
     setLoading(true)
@@ -78,7 +80,20 @@ export default function TripsPage() {
         return
       }
 
-      const response = await fetch(`/api/trips/all?page=${page}&limit=10`, {
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10'
+      })
+
+      if (startDate) {
+        params.append('startDate', startDate)
+      }
+      if (endDate) {
+        params.append('endDate', endDate)
+      }
+
+      const response = await fetch(`/api/trips/all?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -102,6 +117,18 @@ export default function TripsPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+  }
+
+  const handleDateFilterChange = (start: string, end: string) => {
+    setStartDate(start)
+    setEndDate(end)
+    setCurrentPage(1) // Reset to first page when filters change
+  }
+
+  const clearDateFilters = () => {
+    setStartDate('')
+    setEndDate('')
+    setCurrentPage(1)
   }
 
   const handleDeleteTrip = async (tripId: number) => {
@@ -186,6 +213,55 @@ export default function TripsPage() {
               {error}
             </div>
           )}
+          {/* Date Range Filter */}
+          <div className="card mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="flex-1">
+                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de inicio
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  value={startDate}
+                  onChange={(e) => handleDateFilterChange(e.target.value, endDate)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-nicaragua-blue focus:border-nicaragua-blue"
+                />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de fin
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  value={endDate}
+                  onChange={(e) => handleDateFilterChange(startDate, e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-nicaragua-blue focus:border-nicaragua-blue"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={clearDateFilters}
+                  className="btn-secondary whitespace-nowrap"
+                  disabled={!startDate && !endDate}
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+            {(startDate || endDate) && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-nicaragua-blue">
+                  <span className="font-medium">Filtros activos:</span>
+                  {startDate && ` Desde ${new Date(startDate).toLocaleDateString('es-NI')}`}
+                  {startDate && endDate && ' - '}
+                  {endDate && ` Hasta ${new Date(endDate).toLocaleDateString('es-NI')}`}
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="card">
             {loading ? (
               <div className="text-center py-12">
@@ -195,7 +271,9 @@ export default function TripsPage() {
             ) : trips.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <div className="text-4xl mb-4">📋</div>
-                <p className="text-lg">No hay viajes registrados</p>
+                <p className="text-lg">
+                  {startDate || endDate ? 'No hay viajes en el rango de fechas seleccionado' : 'No hay viajes registrados'}
+                </p>
               </div>
             ) : (
               <div>
@@ -305,39 +383,89 @@ export default function TripsPage() {
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
-                  <div className="mt-6 flex items-center justify-between">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={!pagination.hasPrevPage}
-                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Anterior
-                    </button>
-                    <div className="flex space-x-2">
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                        const page = i + 1
-                        return (
-                          <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`px-3 py-1 rounded text-sm ${
-                              page === currentPage
-                                ? 'bg-nicaragua-blue text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        )
-                      })}
+                  <div className="mt-6">
+                    {/* Mobile Pagination */}
+                    <div className="flex flex-col space-y-3 md:hidden">
+                      <div className="text-center text-sm text-gray-600">
+                        Página {pagination.currentPage} de {pagination.totalPages}
+                      </div>
+                      <div className="flex justify-center space-x-3">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={!pagination.hasPrevPage}
+                          className="flex-1 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-sm py-2 max-w-[120px]"
+                        >
+                          ← Anterior
+                        </button>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={!pagination.hasNextPage}
+                          className="flex-1 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-sm py-2 max-w-[120px]"
+                        >
+                          Siguiente →
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={!pagination.hasNextPage}
-                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Siguiente
-                    </button>
+
+                    {/* Desktop Pagination */}
+                    <div className="hidden md:flex items-center justify-between">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={!pagination.hasPrevPage}
+                        className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Anterior
+                      </button>
+                      <div className="flex space-x-2">
+                        {(() => {
+                          const totalPages = pagination.totalPages
+                          const current = currentPage
+                          const pages = []
+                          
+                          // Show first page
+                          if (current > 3) {
+                            pages.push(1)
+                            if (current > 4) pages.push('...')
+                          }
+                          
+                          // Show pages around current
+                          for (let i = Math.max(1, current - 2); i <= Math.min(totalPages, current + 2); i++) {
+                            pages.push(i)
+                          }
+                          
+                          // Show last page
+                          if (current < totalPages - 2) {
+                            if (current < totalPages - 3) pages.push('...')
+                            pages.push(totalPages)
+                          }
+                          
+                          return pages.map((page, index) => (
+                            page === '...' ? (
+                              <span key={`ellipsis-${index}`} className="px-3 py-1 text-gray-500">...</span>
+                            ) : (
+                              <button
+                                key={page}
+                                onClick={() => handlePageChange(page as number)}
+                                className={`px-3 py-1 rounded text-sm min-w-[40px] ${
+                                  page === current
+                                    ? 'bg-nicaragua-blue text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            )
+                          ))
+                        })()}
+                      </div>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={!pagination.hasNextPage}
+                        className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

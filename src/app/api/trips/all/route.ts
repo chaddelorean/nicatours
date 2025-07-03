@@ -28,39 +28,132 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get pagination parameters from URL
+    // Get pagination and filter parameters from URL
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = (page - 1) * limit
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
-    // Get total count for pagination
-    const countResult = await sql`
-      SELECT COUNT(*) as total 
-      FROM trips
-    `
+    // Get total count and trips with date filtering
+    let countResult: any
+    let trips: any
+
+    if (startDate && endDate) {
+      // Both start and end date provided
+      const endDateTime = endDate + ' 23:59:59'
+      
+      countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM trips t
+        WHERE t.created_at >= ${startDate} AND t.created_at <= ${endDateTime}
+      `
+      
+      trips = await sql`
+        SELECT
+          t.id,
+          t.kilometers_driven,
+          t.diesel_liters_used,
+          t.diesel_cost,
+          t.maintenance_cost,
+          t.profit_margin_percentage,
+          t.profit_amount,
+          t.grand_total,
+          t.created_at,
+          u.username
+        FROM trips t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.created_at >= ${startDate} AND t.created_at <= ${endDateTime}
+        ORDER BY t.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `
+    } else if (startDate) {
+      // Only start date provided
+      countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM trips t
+        WHERE t.created_at >= ${startDate}
+      `
+      
+      trips = await sql`
+        SELECT
+          t.id,
+          t.kilometers_driven,
+          t.diesel_liters_used,
+          t.diesel_cost,
+          t.maintenance_cost,
+          t.profit_margin_percentage,
+          t.profit_amount,
+          t.grand_total,
+          t.created_at,
+          u.username
+        FROM trips t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.created_at >= ${startDate}
+        ORDER BY t.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `
+    } else if (endDate) {
+      // Only end date provided
+      const endDateTime = endDate + ' 23:59:59'
+      
+      countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM trips t
+        WHERE t.created_at <= ${endDateTime}
+      `
+      
+      trips = await sql`
+        SELECT
+          t.id,
+          t.kilometers_driven,
+          t.diesel_liters_used,
+          t.diesel_cost,
+          t.maintenance_cost,
+          t.profit_margin_percentage,
+          t.profit_amount,
+          t.grand_total,
+          t.created_at,
+          u.username
+        FROM trips t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.created_at <= ${endDateTime}
+        ORDER BY t.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `
+    } else {
+      // No date filtering
+      countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM trips
+      `
+      
+      trips = await sql`
+        SELECT
+          t.id,
+          t.kilometers_driven,
+          t.diesel_liters_used,
+          t.diesel_cost,
+          t.maintenance_cost,
+          t.profit_margin_percentage,
+          t.profit_amount,
+          t.grand_total,
+          t.created_at,
+          u.username
+        FROM trips t
+        JOIN users u ON t.user_id = u.id
+        ORDER BY t.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `
+    }
+
     const totalTrips = parseInt(countResult[0].total)
     const totalPages = Math.ceil(totalTrips / limit)
-
-    // Get trips with user information and pagination
-    const trips = await sql`
-      SELECT 
-        t.id,
-        t.kilometers_driven,
-        t.diesel_liters_used,
-        t.diesel_cost,
-        t.maintenance_cost,
-        t.profit_margin_percentage,
-        t.profit_amount,
-        t.grand_total,
-        t.created_at,
-        u.username
-      FROM trips t
-      JOIN users u ON t.user_id = u.id
-      ORDER BY t.created_at DESC
-      LIMIT ${limit}
-      OFFSET ${offset}
-    `
 
     return NextResponse.json({ 
       trips,
