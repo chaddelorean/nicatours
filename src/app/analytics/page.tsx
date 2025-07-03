@@ -145,6 +145,13 @@ export default function AnalyticsPage() {
     })
   }
 
+  const formatDateForChart = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-NI', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -293,7 +300,7 @@ export default function AnalyticsPage() {
                         id: 'Ingresos',
                         color: '#10B981',
                         data: analyticsData.dailyData.map(d => ({
-                          x: d.date,
+                          x: formatDateForChart(d.date),
                           y: d.totalRevenue
                         }))
                       }]}
@@ -340,7 +347,7 @@ export default function AnalyticsPage() {
                         id: 'Ganancias',
                         color: '#3B82F6',
                         data: analyticsData.dailyData.map(d => ({
-                          x: d.date,
+                          x: formatDateForChart(d.date),
                           y: d.totalProfit
                         }))
                       }]}
@@ -387,7 +394,7 @@ export default function AnalyticsPage() {
                         id: 'Viajes',
                         color: '#8B5CF6',
                         data: analyticsData.dailyData.map(d => ({
-                          x: d.date,
+                          x: formatDateForChart(d.date),
                           y: d.tripCount
                         }))
                       }]}
@@ -434,7 +441,7 @@ export default function AnalyticsPage() {
                         id: 'Kilómetros',
                         color: '#F59E0B',
                         data: analyticsData.dailyData.map(d => ({
-                          x: d.date,
+                          x: formatDateForChart(d.date),
                           y: d.totalKilometers
                         }))
                       }]}
