@@ -40,55 +40,9 @@ export async function GET(request: NextRequest) {
     let topDays
 
     if (startDate && endDate) {
-      // Custom date range
-      dailyData = await sql`
-        SELECT
-          DATE(created_at) as date,
-          COUNT(*) as trip_count,
-          SUM(kilometers_driven) as total_kilometers,
-          SUM(diesel_liters_used) as total_liters,
-          SUM(diesel_cost) as total_diesel_cost,
-          SUM(maintenance_cost) as total_maintenance_cost,
-          SUM(profit_amount) as total_profit,
-          SUM(grand_total) as total_revenue,
-          AVG(profit_margin_percentage) as avg_profit_margin
-        FROM trips
-        WHERE created_at >= ${startDate} AND created_at <= ${endDate}
-        GROUP BY DATE(created_at)
-        ORDER BY date ASC
-      `
-
-      summaryData = await sql`
-        SELECT
-          COUNT(*) as total_trips,
-          SUM(kilometers_driven) as total_kilometers,
-          SUM(diesel_liters_used) as total_liters,
-          SUM(diesel_cost) as total_diesel_cost,
-          SUM(maintenance_cost) as total_maintenance_cost,
-          SUM(profit_amount) as total_profit,
-          SUM(grand_total) as total_revenue,
-          AVG(profit_margin_percentage) as avg_profit_margin,
-          MAX(grand_total) as max_trip_value,
-          MIN(grand_total) as min_trip_value
-        FROM trips
-        WHERE created_at >= ${startDate} AND created_at <= ${endDate}
-      `
-
-      topDays = await sql`
-        SELECT
-          DATE(created_at) as date,
-          COUNT(*) as trip_count,
-          SUM(grand_total) as daily_revenue,
-          SUM(profit_amount) as daily_profit
-        FROM trips
-        WHERE created_at >= ${startDate} AND created_at <= ${endDate}
-        GROUP BY DATE(created_at)
-        ORDER BY daily_revenue DESC
-        LIMIT 5
-      `
-    } else {
-      // Predefined period (days)
-      const days = parseInt(period)
+      // Custom date range - add time to include full days
+      const startDateTime = startDate + ' 00:00:00'
+      const endDateTime = endDate + ' 23:59:59'
       
       dailyData = await sql`
         SELECT
@@ -102,7 +56,7 @@ export async function GET(request: NextRequest) {
           SUM(grand_total) as total_revenue,
           AVG(profit_margin_percentage) as avg_profit_margin
         FROM trips
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= ${startDateTime} AND created_at <= ${endDateTime}
         GROUP BY DATE(created_at)
         ORDER BY date ASC
       `
@@ -120,7 +74,7 @@ export async function GET(request: NextRequest) {
           MAX(grand_total) as max_trip_value,
           MIN(grand_total) as min_trip_value
         FROM trips
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= ${startDateTime} AND created_at <= ${endDateTime}
       `
 
       topDays = await sql`
@@ -130,7 +84,59 @@ export async function GET(request: NextRequest) {
           SUM(grand_total) as daily_revenue,
           SUM(profit_amount) as daily_profit
         FROM trips
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= ${startDateTime} AND created_at <= ${endDateTime}
+        GROUP BY DATE(created_at)
+        ORDER BY daily_revenue DESC
+        LIMIT 5
+      `
+    } else {
+      // Predefined period (days)
+      const days = parseInt(period)
+      const startDateCalc = new Date()
+      startDateCalc.setDate(startDateCalc.getDate() - days)
+      const startDateStr = startDateCalc.toISOString().split('T')[0]
+      
+      dailyData = await sql`
+        SELECT
+          DATE(created_at) as date,
+          COUNT(*) as trip_count,
+          SUM(kilometers_driven) as total_kilometers,
+          SUM(diesel_liters_used) as total_liters,
+          SUM(diesel_cost) as total_diesel_cost,
+          SUM(maintenance_cost) as total_maintenance_cost,
+          SUM(profit_amount) as total_profit,
+          SUM(grand_total) as total_revenue,
+          AVG(profit_margin_percentage) as avg_profit_margin
+        FROM trips
+        WHERE created_at >= ${startDateStr}
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `
+
+      summaryData = await sql`
+        SELECT
+          COUNT(*) as total_trips,
+          SUM(kilometers_driven) as total_kilometers,
+          SUM(diesel_liters_used) as total_liters,
+          SUM(diesel_cost) as total_diesel_cost,
+          SUM(maintenance_cost) as total_maintenance_cost,
+          SUM(profit_amount) as total_profit,
+          SUM(grand_total) as total_revenue,
+          AVG(profit_margin_percentage) as avg_profit_margin,
+          MAX(grand_total) as max_trip_value,
+          MIN(grand_total) as min_trip_value
+        FROM trips
+        WHERE created_at >= ${startDateStr}
+      `
+
+      topDays = await sql`
+        SELECT
+          DATE(created_at) as date,
+          COUNT(*) as trip_count,
+          SUM(grand_total) as daily_revenue,
+          SUM(profit_amount) as daily_profit
+        FROM trips
+        WHERE created_at >= ${startDateStr}
         GROUP BY DATE(created_at)
         ORDER BY daily_revenue DESC
         LIMIT 5
@@ -179,6 +185,25 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching analytics:', error)
+    console.error('Error details:', error)
+    
+    // Check if it's a database connection error
+    if (error.message && error.message.includes('connect')) {
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 500 }
+      )
+    }
+    
+    // Check if it's a SQL syntax error
+    if (error.message && error.message.includes('syntax')) {
+      console.error('SQL syntax error:', error.message)
+      return NextResponse.json(
+        { error: 'Error de sintaxis en la consulta' },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

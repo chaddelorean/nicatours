@@ -6,13 +6,13 @@ import Header from '../components/Header'
 
 interface Trip {
   id: number
-  kilometers_driven: number
-  diesel_liters_used: number
-  diesel_cost: number
-  maintenance_cost: number
-  profit_margin_percentage: number
-  profit_amount: number
-  grand_total: number
+  kilometers_driven: number | string
+  diesel_liters_used: number | string
+  diesel_cost: number | string
+  maintenance_cost: number | string
+  profit_margin_percentage: number | string
+  profit_amount: number | string
+  grand_total: number | string
   created_at: string
   username: string
 }
@@ -159,8 +159,9 @@ export default function TripsPage() {
     })
   }
 
-  const formatCurrency = (amount: number) => {
-    return `C$ ${amount.toFixed(2)}`
+  const formatCurrency = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    return `C$ ${(isNaN(numAmount) ? 0 : numAmount).toFixed(2)}`
   }
 
   if (isAuthenticated === null) {
@@ -234,15 +235,15 @@ export default function TripsPage() {
                         </div>
                         <div className="flex justify-between">
                           <span>Kilómetros:</span>
-                          <span>{trip.kilometers_driven} km</span>
+                          <span>{parseFloat(trip.kilometers_driven.toString()).toFixed(1)} km</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Litros:</span>
-                          <span>{trip.diesel_liters_used} L</span>
+                          <span>{parseFloat(trip.diesel_liters_used.toString()).toFixed(2)} L</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Margen:</span>
-                          <span>{trip.profit_margin_percentage}%</span>
+                          <span>{parseFloat(trip.profit_margin_percentage.toString()).toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between font-semibold text-nicaragua-blue pt-2 border-t">
                           <span>Total:</span>
@@ -282,9 +283,9 @@ export default function TripsPage() {
                         <tr key={trip.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm font-medium text-nicaragua-blue">#{trip.id}</td>
                           <td className="px-4 py-3 text-sm text-gray-900">{trip.username}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{trip.kilometers_driven} km</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{trip.diesel_liters_used} L</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{trip.profit_margin_percentage}%</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{parseFloat(trip.kilometers_driven.toString()).toFixed(1)} km</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{parseFloat(trip.diesel_liters_used.toString()).toFixed(2)} L</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{parseFloat(trip.profit_margin_percentage.toString()).toFixed(1)}%</td>
                           <td className="px-4 py-3 text-sm font-semibold text-nicaragua-blue">{formatCurrency(trip.grand_total)}</td>
                           <td className="px-4 py-3 text-sm text-gray-500">{formatDate(trip.created_at)}</td>
                           <td className="px-4 py-3 text-sm">
