@@ -94,7 +94,7 @@ export default function HomePage() {
           <h3 className="text-2xl font-bold text-white text-center mb-8">
             Herramientas de Gestión
           </h3>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Link href="/calculadora" className="group">
               <div className="card hover:shadow-xl transition-shadow duration-300">
                 <div className="text-center">
@@ -108,6 +108,24 @@ export default function HomePage() {
                   </p>
                   <div className="btn-primary inline-block group-hover:bg-blue-700">
                     Abrir Calculadora
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/trips" className="group">
+              <div className="card hover:shadow-xl transition-shadow duration-300">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🚐</div>
+                  <h4 className="text-xl font-semibold text-nicaragua-blue mb-2">
+                    Historial de Viajes
+                  </h4>
+                  <p className="text-gray-600 mb-4">
+                    Ver todos los viajes registrados con paginación
+                    y detalles completos
+                  </p>
+                  <div className="btn-primary inline-block group-hover:bg-blue-700">
+                    Ver Viajes
                   </div>
                 </div>
               </div>

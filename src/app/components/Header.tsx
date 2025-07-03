@@ -33,6 +33,8 @@ export default function Header({ onLogout }: HeaderProps) {
   const navItems = [
     { href: '/', label: 'Inicio', icon: '🏠' },
     { href: '/calculadora', label: 'Calculadora', icon: '💰' },
+    { href: '/trips', label: 'Viajes', icon: '🚐' },
+    { href: '/analytics', label: 'Análisis', icon: '📊' },
     { href: '#', label: 'Reservas', icon: '📋', disabled: true },
   ]
 

@@ -11,6 +11,8 @@ export default function CalculadoraPage() {
   const [precioDiesel, setPrecioDiesel] = useState('')
   const [margenGanancia, setMargenGanancia] = useState('600')
   const [resultado, setResultado] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
   const router = useRouter()
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -94,6 +96,59 @@ export default function CalculadoraPage() {
     setPrecioDiesel('')
     setMargenGanancia('')
     setResultado(null)
+    setSaveMessage('')
+  }
+
+  const guardarPago = async () => {
+    if (!resultado) {
+      alert('Primero debe calcular el precio del viaje')
+      return
+    }
+
+    setIsSaving(true)
+    setSaveMessage('')
+
+    try {
+      const token = localStorage.getItem('jwt_token')
+      if (!token) {
+        alert('Sesión expirada. Por favor, inicie sesión nuevamente.')
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          kilometros: resultado.kilometros,
+          litrosNecesarios: resultado.litrosNecesarios,
+          costoCombustible: resultado.costoCombustible,
+          costoMantenimiento: resultado.costoMantenimiento,
+          gananciaNeta: resultado.gananciaNeta,
+          total: resultado.total,
+          margenPorcentaje: resultado.margenPorcentaje
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSaveMessage('¡Viaje guardado exitosamente!')
+        setTimeout(() => setSaveMessage(''), 3000)
+      } else {
+        throw new Error(data.error || 'Error al guardar el viaje')
+      }
+
+    } catch (error) {
+      console.error('Error saving trip:', error)
+      setSaveMessage('Error al guardar el viaje. Inténtelo nuevamente.')
+      setTimeout(() => setSaveMessage(''), 3000)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   if (isAuthenticated === null) {
@@ -250,6 +305,26 @@ export default function CalculadoraPage() {
                       <strong>Precio recomendado:</strong> C$ {resultado.total}<br/>
                       Este precio incluye combustible, mantenimiento y su margen de ganancia.
                     </p>
+                  </div>
+
+                  <div className="mt-6">
+                    <button
+                      onClick={guardarPago}
+                      disabled={isSaving}
+                      className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSaving ? 'Guardando...' : 'Guardar Pago'}
+                    </button>
+                    
+                    {saveMessage && (
+                      <div className={`mt-3 p-3 rounded-lg text-sm text-center ${
+                        saveMessage.includes('Error')
+                          ? 'bg-red-50 text-red-700 border border-red-200'
+                          : 'bg-green-50 text-green-700 border border-green-200'
+                      }`}>
+                        {saveMessage}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
