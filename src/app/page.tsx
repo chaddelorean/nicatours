@@ -36,11 +36,11 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date().toLocaleDateString()
         
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
-          new Date(ride.ride_date).toISOString().split('T')[0] === today && ride.status === 'scheduled'
+          new Date(ride.ride_date).toLocaleDateString() === today && ride.status === 'scheduled'
         )
         
         setTodaysRides(todaysRides)
@@ -117,13 +117,17 @@ export default function HomePage() {
                       <h3 className="font-semibold text-nicaragua-blue text-lg">
                         {ride.client_name}
                       </h3>
-                      <p className="text-gray-600 text-sm">
-                        📞 {ride.client_phone}
-                      </p>
-                      {ride.client_email && (
+                      <a href={`tel:${ride.client_phone}`} >
                         <p className="text-gray-600 text-sm">
-                          ✉️ {ride.client_email}
+                          📞 {ride.client_phone}
                         </p>
+                      </a>
+                      {ride.client_email && (
+                        <a href={`mailto:${ride.client_email}`}>
+                          <p className="text-gray-600 text-sm">
+                            ✉️ {ride.client_email}
+                          </p>
+                        </a>
                       )}
                     </div>
                     {ride.trip_total && (
