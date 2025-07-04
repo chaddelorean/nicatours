@@ -40,7 +40,7 @@ export default function HomePage() {
         
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
-          ride.ride_date === today && ride.status === 'scheduled'
+          new Date(ride.ride_date).toISOString().split('T')[0] === today && ride.status === 'scheduled'
         )
         
         setTodaysRides(todaysRides)
