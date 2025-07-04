@@ -47,7 +47,7 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        const today = new Date().toLocaleDateString();
+        const today = new Date().toISOString().split('T')[0];
 
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
