@@ -31,7 +31,15 @@ export default function HomePage() {
       d1.getMonth() === d2.getMonth() &&
       d1.getDate() === d2.getDate()
     );
-}
+  }
+
+  function getTodayFormatted() {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // getMonth is 0-based
+    const day = String(today.getDate()).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${month}/${day}/${year}`;
+  }
 
   const fetchTodaysRides = async () => {
     setIsLoadingRides(true)
@@ -47,7 +55,7 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayFormatted();
 
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
