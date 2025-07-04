@@ -51,7 +51,7 @@ export default function HomePage() {
 
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
-          isSameLocalDate(ride.ride_date, today) && ride.status === 'scheduled'
+          isSameLocalDate(ride.ride_date.split('T')[0], today) && ride.status === 'scheduled'
         )
         
         setTodaysRides(todaysRides)
