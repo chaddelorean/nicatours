@@ -36,11 +36,11 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        const today = new Date().toLocaleDateString()
-        
+        const today = new Date().toISOString().split('T')[0]
+
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
-          new Date(ride.ride_date).toLocaleDateString() === today && ride.status === 'scheduled'
+          ride.ride_date.split('T')[0] === today && ride.status === 'scheduled'
         )
         
         setTodaysRides(todaysRides)
