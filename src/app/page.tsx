@@ -38,7 +38,7 @@ export default function HomePage() {
     const month = String(today.getMonth() + 1).padStart(2, '0'); // getMonth is 0-based
     const day = String(today.getDate()).padStart(2, '0');
     const year = today.getFullYear();
-    return `${month}/${day}/${year}`;
+    return `${year}-${month}-${day}`; // Return in YYYY-MM-DD format for consistency
   }
 
   const fetchTodaysRides = async () => {
