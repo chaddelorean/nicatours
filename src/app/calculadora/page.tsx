@@ -424,8 +424,8 @@ export default function CalculadoraPage() {
                                 type="date"
                                 className="form-input"
                                 value={rideFormData.rideDate}
-                                onChange={(e) => setRideFormData({...rideFormData, rideDate: e.target.value})}
-                                min={new Date().toISOString()}
+                                onChange={(e) => setRideFormData({...rideFormData, rideDate: new Date(e.target.value).toISOString()})}
+                                min={new Date().toLocaleDateString()}
                                 required
                               />
                             </div>
