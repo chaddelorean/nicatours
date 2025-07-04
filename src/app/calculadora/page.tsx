@@ -13,6 +13,17 @@ export default function CalculadoraPage() {
   const [resultado, setResultado] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [savedTripId, setSavedTripId] = useState<number | null>(null)
+  const [showRideForm, setShowRideForm] = useState(false)
+  const [rideFormData, setRideFormData] = useState({
+    rideDate: '',
+    clientName: '',
+    clientPhone: '',
+    clientEmail: '',
+    notes: ''
+  })
+  const [isSavingRide, setIsSavingRide] = useState(false)
+  const [rideMessage, setRideMessage] = useState('')
   const router = useRouter()
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -97,6 +108,16 @@ export default function CalculadoraPage() {
     setMargenGanancia('')
     setResultado(null)
     setSaveMessage('')
+    setSavedTripId(null)
+    setShowRideForm(false)
+    setRideFormData({
+      rideDate: '',
+      clientName: '',
+      clientPhone: '',
+      clientEmail: '',
+      notes: ''
+    })
+    setRideMessage('')
   }
 
   const guardarPago = async () => {
@@ -137,6 +158,8 @@ export default function CalculadoraPage() {
 
       if (response.ok) {
         setSaveMessage('¡Viaje guardado exitosamente!')
+        setSavedTripId(data.tripId)
+        setShowRideForm(true)
         setTimeout(() => setSaveMessage(''), 3000)
       } else {
         throw new Error(data.error || 'Error al guardar el viaje')
@@ -148,6 +171,65 @@ export default function CalculadoraPage() {
       setTimeout(() => setSaveMessage(''), 3000)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const guardarViajeProgramado = async () => {
+    if (!rideFormData.rideDate || !rideFormData.clientName || !rideFormData.clientPhone) {
+      alert('Fecha, nombre del cliente y teléfono son requeridos')
+      return
+    }
+
+    setIsSavingRide(true)
+    setRideMessage('')
+
+    try {
+      const token = localStorage.getItem('jwt_token')
+      if (!token) {
+        alert('Sesión expirada. Por favor, inicie sesión nuevamente.')
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/upcoming-rides', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rideDate: rideFormData.rideDate,
+          clientName: rideFormData.clientName,
+          clientPhone: rideFormData.clientPhone,
+          clientEmail: rideFormData.clientEmail,
+          tripId: savedTripId,
+          notes: rideFormData.notes
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setRideMessage('¡Viaje programado exitosamente!')
+        // Reset ride form
+        setRideFormData({
+          rideDate: '',
+          clientName: '',
+          clientPhone: '',
+          clientEmail: '',
+          notes: ''
+        })
+        setTimeout(() => setRideMessage(''), 3000)
+      } else {
+        throw new Error(data.error || 'Error al programar el viaje')
+      }
+
+    } catch (error) {
+      console.error('Error saving upcoming ride:', error)
+      setRideMessage('Error al programar el viaje. Inténtelo nuevamente.')
+      setTimeout(() => setRideMessage(''), 3000)
+    } finally {
+      setIsSavingRide(false)
     }
   }
 
@@ -323,6 +405,108 @@ export default function CalculadoraPage() {
                           : 'bg-green-50 text-green-700 border border-green-200'
                       }`}>
                         {saveMessage}
+                      </div>
+                    )}
+
+                    {showRideForm && savedTripId && (
+                      <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h3 className="text-lg font-semibold text-nicaragua-blue mb-4">
+                          Programar Viaje para Cliente
+                        </h3>
+                        
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Fecha del Viaje *
+                              </label>
+                              <input
+                                type="date"
+                                className="form-input"
+                                value={rideFormData.rideDate}
+                                onChange={(e) => setRideFormData({...rideFormData, rideDate: e.target.value})}
+                                min={new Date().toISOString().split('T')[0]}
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Nombre del Cliente *
+                              </label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Nombre completo del cliente"
+                                value={rideFormData.clientName}
+                                onChange={(e) => setRideFormData({...rideFormData, clientName: e.target.value})}
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Teléfono *
+                              </label>
+                              <input
+                                type="tel"
+                                className="form-input"
+                                placeholder="Número de teléfono"
+                                value={rideFormData.clientPhone}
+                                onChange={(e) => setRideFormData({...rideFormData, clientPhone: e.target.value})}
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Email (Opcional)
+                              </label>
+                              <input
+                                type="email"
+                                className="form-input"
+                                placeholder="correo@ejemplo.com"
+                                value={rideFormData.clientEmail}
+                                onChange={(e) => setRideFormData({...rideFormData, clientEmail: e.target.value})}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                              Notas Adicionales (Opcional)
+                            </label>
+                            <textarea
+                              className="form-input resize-none"
+                              rows={3}
+                              placeholder="Notas sobre el viaje, punto de encuentro, etc."
+                              value={rideFormData.notes}
+                              onChange={(e) => setRideFormData({...rideFormData, notes: e.target.value})}
+                            />
+                          </div>
+                          
+                          <div className="pt-4">
+                            <button
+                              onClick={guardarViajeProgramado}
+                              disabled={isSavingRide}
+                              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isSavingRide ? 'Programando...' : 'Programar Viaje'}
+                            </button>
+                            
+                            {rideMessage && (
+                              <div className={`mt-3 p-3 rounded-lg text-sm text-center ${
+                                rideMessage.includes('Error')
+                                  ? 'bg-red-50 text-red-700 border border-red-200'
+                                  : 'bg-green-50 text-green-700 border border-green-200'
+                              }`}>
+                                {rideMessage}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -5,9 +5,52 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from './components/Header'
 
+interface TodaysRide {
+  id: number
+  ride_date: string
+  client_name: string
+  client_phone: string
+  client_email?: string
+  notes?: string
+  status: string
+  trip_total?: number
+}
+
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [todaysRides, setTodaysRides] = useState<TodaysRide[]>([])
+  const [isLoadingRides, setIsLoadingRides] = useState(false)
   const router = useRouter()
+
+  const fetchTodaysRides = async () => {
+    setIsLoadingRides(true)
+    try {
+      const token = localStorage.getItem('jwt_token')
+      if (!token) return
+
+      const response = await fetch('/api/upcoming-rides', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const today = new Date().toISOString().split('T')[0]
+        
+        // Filter rides for today
+        const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
+          ride.ride_date === today && ride.status === 'scheduled'
+        )
+        
+        setTodaysRides(todaysRides)
+      }
+    } catch (error) {
+      console.error('Error fetching today\'s rides:', error)
+    } finally {
+      setIsLoadingRides(false)
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('jwt_token')
@@ -28,6 +71,7 @@ export default function HomePage() {
       }
       
       setIsAuthenticated(true)
+      fetchTodaysRides()
     } catch (error) {
       localStorage.removeItem('jwt_token')
       router.push('/login')
@@ -50,6 +94,72 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header onLogout={handleLogout} />
+
+      {/* Today's Rides Section */}
+      {todaysRides.length > 0 && (
+        <section className="py-8 px-4 bg-gradient-to-r from-green-600/20 to-blue-600/20 border-b border-white/10">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <span className="text-3xl mr-3">📅</span>
+                Viajes de Hoy
+              </h2>
+              <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {todaysRides.length} {todaysRides.length === 1 ? 'viaje' : 'viajes'}
+              </div>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {todaysRides.map((ride) => (
+                <div key={ride.id} className="bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-nicaragua-blue text-lg">
+                        {ride.client_name}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        📞 {ride.client_phone}
+                      </p>
+                      {ride.client_email && (
+                        <p className="text-gray-600 text-sm">
+                          ✉️ {ride.client_email}
+                        </p>
+                      )}
+                    </div>
+                    {ride.trip_total && (
+                      <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
+                        C$ {ride.trip_total}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {ride.notes && (
+                    <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
+                      <strong>Notas:</strong> {ride.notes}
+                    </div>
+                  )}
+                  
+                  <div className="mt-3 flex items-center text-sm text-gray-500">
+                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Programado para hoy
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isLoadingRides && (
+        <section className="py-4 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center text-white">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Cargando viajes de hoy...
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Hero Section */}
       <section className="py-20 px-4">

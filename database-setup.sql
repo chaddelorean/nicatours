@@ -26,3 +26,23 @@ CREATE TABLE IF NOT EXISTS trips (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   user_id INTEGER REFERENCES users(id)
 );
+
+-- Create upcoming_rides table for calendar functionality
+CREATE TABLE IF NOT EXISTS upcoming_rides (
+  id SERIAL PRIMARY KEY,
+  ride_date DATE NOT NULL,
+  client_name VARCHAR(100) NOT NULL,
+  client_phone VARCHAR(20) NOT NULL,
+  client_email VARCHAR(100),
+  trip_id INTEGER REFERENCES trips(id),
+  notes TEXT,
+  status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index on ride_date for efficient calendar queries
+CREATE INDEX IF NOT EXISTS idx_upcoming_rides_date ON upcoming_rides(ride_date);
+
+-- Create index on status for filtering
+CREATE INDEX IF NOT EXISTS idx_upcoming_rides_status ON upcoming_rides(status);
