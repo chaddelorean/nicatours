@@ -22,6 +22,17 @@ export default function HomePage() {
   const [isLoadingRides, setIsLoadingRides] = useState(false)
   const router = useRouter()
 
+  function isSameLocalDate(dateStr1: string, dateStr2: string): boolean {
+    const d1 = new Date(dateStr1);
+    const d2 = new Date(dateStr2);
+
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+}
+
   const fetchTodaysRides = async () => {
     setIsLoadingRides(true)
     try {
@@ -36,11 +47,11 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json()
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date().toISOString();
 
         // Filter rides for today
         const todaysRides = data.upcomingRides.filter((ride: TodaysRide) =>
-          ride.ride_date.split('T')[0] === today && ride.status === 'scheduled'
+          isSameLocalDate(ride.ride_date, today) && ride.status === 'scheduled'
         )
         
         setTodaysRides(todaysRides)
